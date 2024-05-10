@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
-import { ChainedTokenCredential } from "@azure/identity";
+import { TokenCredential } from "@azure/identity";
 import { AzureResource, Subscription, CosmosAccount, CosmosDatabase, CosmosContainer, AzureResourceProvider } from "../provider/azure-resource-tree-provider";
 
 export class ClearContainerAdapter {
     constructor(
         private readonly resourceTreeProvider: AzureResourceProvider,
-        private credentials: ChainedTokenCredential | null = null
+        private credentials: TokenCredential | null = null
     ) {}
 
-    public updateCredentials(credentials: ChainedTokenCredential | null) {
+    public updateCredentials(credentials: TokenCredential | null) {
         this.credentials = credentials;
     }
 

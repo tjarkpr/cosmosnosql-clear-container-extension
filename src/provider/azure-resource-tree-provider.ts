@@ -3,7 +3,7 @@ import * as path from 'path';
 import { CosmosClient, Database, Container } from "@azure/cosmos";
 import { SubscriptionClient } from "@azure/arm-subscriptions";
 import { CosmosDBManagementClient } from "@azure/arm-cosmosdb";
-import { ChainedTokenCredential } from "@azure/identity";
+import { TokenCredential } from "@azure/identity";
 
 export class AzureResourceProvider implements vscode.TreeDataProvider<AzureResource> {
   private _onDidChangeTreeData: vscode.EventEmitter<AzureResource | undefined> = new vscode.EventEmitter<AzureResource | undefined>();
@@ -14,7 +14,7 @@ export class AzureResourceProvider implements vscode.TreeDataProvider<AzureResou
   private _cosmosContainers: Map<string, CosmosContainer[]> = new Map<string, CosmosContainer[]>();
 
   constructor(
-    private credentials: ChainedTokenCredential | null = null
+    private credentials: TokenCredential | null = null
   ) {}
 
 
@@ -30,7 +30,7 @@ export class AzureResourceProvider implements vscode.TreeDataProvider<AzureResou
     return this._cosmosContainers.get(databaseId);
   }
 
-  public updateCredentials(credentials: ChainedTokenCredential | null) {
+  public updateCredentials(credentials: TokenCredential | null) {
     this.credentials = credentials;
   }
 
@@ -224,8 +224,8 @@ export class Subscription extends AzureResource {
   }
 
   iconPath = {
-    light: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'subscription-icon.svg'),
-    dark: path.join(__filename, '..', '..', '..', 'resources', 'light', 'subscription-icon.svg')
+    light: path.join(__filename, '..', 'resources', 'dark', 'subscription-icon.svg'),
+    dark: path.join(__filename, '..', 'resources', 'light', 'subscription-icon.svg')
   };
   contextValue = 'subscription';
 }
@@ -242,8 +242,8 @@ export class CosmosAccount extends AzureResource {
     super(label, collapsibleState);
     this.tooltip = `Cosmos DB Account: ${this.label}`;
       this.iconPath = {
-        light: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'cosmos-account-icon.svg'),
-        dark: path.join(__filename, '..', '..', '..', 'resources', 'light', 'cosmos-account-icon.svg')
+        light: path.join(__filename, '..', 'resources', 'dark', 'cosmos-account-icon.svg'),
+        dark: path.join(__filename, '..', 'resources', 'light', 'cosmos-account-icon.svg')
       };
       this.contextValue = 'cosmosAccount';
   }
@@ -263,8 +263,8 @@ export class CosmosDatabase extends AzureResource {
   }
 
   iconPath = {
-    light: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'cosmos-database-icon.svg'),
-    dark: path.join(__filename, '..', '..', '..', 'resources', 'light', 'cosmos-database-icon.svg')
+    light: path.join(__filename, '..', 'resources', 'dark', 'cosmos-database-icon.svg'),
+    dark: path.join(__filename, '..', 'resources', 'light', 'cosmos-database-icon.svg')
   };
   contextValue = 'cosmosDatabase';
 }
@@ -286,14 +286,14 @@ export class CosmosContainer extends AzureResource {
       this.tooltip += ' (Empty)';
       this.description = '(Empty)';
       this.iconPath = {
-        light: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'cosmos-empty-container-icon.svg'),
-        dark: path.join(__filename, '..', '..', '..', 'resources', 'light', 'cosmos-empty-container-icon.svg')
+        light: path.join(__filename, '..', 'resources', 'dark', 'cosmos-empty-container-icon.svg'),
+        dark: path.join(__filename, '..', 'resources', 'light', 'cosmos-empty-container-icon.svg')
       };
       return;
     }
     this.iconPath = {
-      light: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'cosmos-full-container-icon.svg'),
-      dark: path.join(__filename, '..', '..', '..', 'resources', 'light', 'cosmos-full-container-icon.svg')
+      light: path.join(__filename, '..', 'resources', 'dark', 'cosmos-full-container-icon.svg'),
+      dark: path.join(__filename, '..', 'resources', 'light', 'cosmos-full-container-icon.svg')
     };
     this.contextValue = 'cosmosContainer';
   }
@@ -304,8 +304,8 @@ class NoResourceFound extends AzureResource {
     super('No resources found', vscode.TreeItemCollapsibleState.None);
   }
   iconPath = {
-    light: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'warning-icon.svg'),
-    dark: path.join(__filename, '..', '..', '..', 'resources', 'light', 'warning-icon.svg')
+    light: path.join(__filename, '..', 'resources', 'dark', 'warning-icon.svg'),
+    dark: path.join(__filename, '..', 'resources', 'light', 'warning-icon.svg')
   };
 }
 
@@ -314,7 +314,7 @@ class InsufficientPermission extends AzureResource {
     super('Insufficient Permission', vscode.TreeItemCollapsibleState.None);
   }
   iconPath = {
-    light: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'warning-icon.svg'),
-    dark: path.join(__filename, '..', '..', '..', 'resources', 'light', 'warning-icon.svg')
+    light: path.join(__filename, '..', 'resources', 'dark', 'warning-icon.svg'),
+    dark: path.join(__filename, '..', 'resources', 'light', 'warning-icon.svg')
   };
 }

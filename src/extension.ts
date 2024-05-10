@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { TreeView } from 'vscode';
-import { DefaultAzureCredential } from "@azure/identity";
+import { InteractiveBrowserCredential } from "@azure/identity";
 import { AzureResourceProvider, AzureResource } from './provider/azure-resource-tree-provider';
 import { ClearContainerAdapter } from './adapter/clear-container-adapter';
 
@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.commands.registerCommand('cosmosnosql-clear-container-extension.loginToAzure', () => {
 		try {
-			var credentials = new DefaultAzureCredential();
+			var credentials = new InteractiveBrowserCredential({});
 			treeResourceProvider.updateCredentials(credentials);
 			clearContainerAdapter.updateCredentials(credentials);
 			context.workspaceState.update('isLoggedIntoAzure', true);

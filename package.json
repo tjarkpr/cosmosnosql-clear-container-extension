@@ -1,0 +1,137 @@
+{
+  "name": "cosmosnosql-clear-container-extension",
+  "displayName": "CosmosNoSQL Clear Container Extension",
+  "description": "A simple, user-friendly way to clear all documents from CosmosNoSQL containers.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "categories": [
+    "Azure",
+    "Other"
+  ],
+  "keywords": ["cosmos", "nosql", "clear", "container"],
+  "publisher": "Tjark Prokoph",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tjarkpr/cosmosnosql-clear-container-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tjarkpr/cosmosnosql-clear-container-extension/issues"
+  },
+  "homepage": "https://github.com/tjarkpr/cosmosnosql-clear-container-extension#readme",
+  "icon": "resources/view-container-icon.png",
+  "galleryBanner": {
+    "color": "#FFFFFF",
+    "theme": "light"
+  },
+  "license": "MIT",
+  "activationEvents": [],
+  "main": "dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cosmosnosql-clear-container-extension.loginToAzure",
+        "title": "Login to Azure",
+        "icon": {
+          "light": "resources/dark/azure-icon.svg",
+          "dark": "resources/light/azure-icon.svg"
+        }
+      },
+      {
+        "command": "cosmosnosql-clear-container-extension.logoutFromAzure",
+        "title": "Logout from Azure",
+        "icon": {
+          "light": "resources/dark/azure-icon.svg",
+          "dark": "resources/light/azure-icon.svg"
+        }
+      },
+      {
+        "command": "cosmosnosql-clear-container-extension.clearContainer",
+        "title": "Clear containers related to selected resource",
+        "icon": {
+          "light": "resources/dark/view-container-icon.svg",
+          "dark": "resources/light/view-container-icon.svg"
+        }
+      },
+      {
+        "command": "cosmosnosql-clear-container-extension.reload",
+        "title": "Reload selected resource",
+        "icon": {
+          "light": "resources/dark/reload-icon.svg",
+          "dark": "resources/light/reload-icon.svg"
+        }
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "cosmosnosql-clear-container-extension.logoutFromAzure",
+          "when": "view == azure-resource-tree-view && cosmosnosql-clear-container-extension.isLoggedIntoAzure === true",
+          "group": "navigation"
+        },
+        {
+          "command": "cosmosnosql-clear-container-extension.reload",
+          "when": "view == azure-resource-tree-view && cosmosnosql-clear-container-extension.isLoggedIntoAzure === true",
+          "group": "navigation"
+        },
+        {
+          "command": "cosmosnosql-clear-container-extension.clearContainer",
+          "when": "view == azure-resource-tree-view && cosmosnosql-clear-container-extension.isLoggedIntoAzure === true",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cosmosnosql-clear-container-extension",
+          "title": "CosmosNoSQL CCE",
+          "icon": "resources/view-container-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "cosmosnosql-clear-container-extension": [
+        {
+          "id": "azure-resource-tree-view",
+          "name": "Resource Tree"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "azure-resource-tree-view",
+        "contents": "In order to use Cosmos NoSQL container clear features, you must login with your Microsoft Azure account.\n[Login to Azure](command:cosmosnosql-clear-container-extension.loginToAzure)",
+        "when": "!cosmosnosql-clear-container-extension.isLoggedIntoAzure"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "test-compile": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.89.0",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.21.1",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@azure/arm-cosmosdb": "^15.6.0",
+    "@azure/arm-subscriptions": "^5.1.0",
+    "@azure/cosmos": "^4.0.0",
+    "@azure/identity": "^4.2.0"
+  }
+}

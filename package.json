@@ -2,7 +2,7 @@
   "name": "cosmosnosql-clear-container-extension",
   "displayName": "CosmosNoSQL Clear Container Extension",
   "description": "A simple, user-friendly way to clear all documents from CosmosNoSQL containers.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.89.0"
   },

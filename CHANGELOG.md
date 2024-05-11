@@ -10,3 +10,8 @@ All notable changes to the "cosmosnosql-clear-container-extension" extension wil
 - Added button for logout
 - Added button for selective reload
 - Added button for selective clearing of containers
+
+## [0.0.2](https://github.com/tjarkpr/cosmosnosql-clear-container-extension/releases)
+
+- Changed to new authentication provider
+- Fixed bugs

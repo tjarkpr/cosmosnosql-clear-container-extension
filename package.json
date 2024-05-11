@@ -114,10 +114,10 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "npm run prebuild && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --packages=external && npm run unix-copy",
+    "esbuild-base": "npm run prebuild && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node && npm run unix-copy",
     "prebuild": "rimraf dist",
-    "unix-copy": "rsync -a resources dist && rsync -a node_modules dist",
-    "copy": "xcopy /I /E resources dist\\resources && xcopy /I /E node_modules dist\\node_modules",
+    "unix-copy": "rsync -a resources dist",
+    "copy": "xcopy /I /E resources dist\\resources",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch"
   },

@@ -10,7 +10,12 @@
     "Azure",
     "Other"
   ],
-  "keywords": ["cosmos", "nosql", "clear", "container"],
+  "keywords": [
+    "cosmos",
+    "nosql",
+    "clear",
+    "container"
+  ],
   "publisher": "Tjark Prokoph",
   "repository": {
     "type": "git",
@@ -109,9 +114,10 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "npm run prebuild && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node && npm run copy",
+    "esbuild-base": "npm run prebuild && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --packages=external && npm run unix-copy",
     "prebuild": "rimraf dist",
-    "copy": "xcopy /I /E resources dist\\resources",
+    "unix-copy": "rsync -a resources dist && rsync -a node_modules dist",
+    "copy": "xcopy /I /E resources dist\\resources && xcopy /I /E node_modules dist\\node_modules",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch"
   },
@@ -131,8 +137,8 @@
   },
   "dependencies": {
     "@azure/arm-cosmosdb": "^15.6.0",
-    "@azure/arm-subscriptions": "^5.1.0",
     "@azure/cosmos": "^4.0.0",
-    "@azure/identity": "^4.2.0"
+    "@azure/identity": "^4.2.0",
+    "@microsoft/vscode-azext-azureauth": "^2.4.0"
   }
 }

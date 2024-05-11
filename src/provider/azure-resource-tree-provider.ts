@@ -1,97 +1,110 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
+import { 
+  window,
+  TreeDataProvider,
+  TreeItemCollapsibleState,
+  EventEmitter,
+  Event,
+  TreeItem
+} from 'vscode';
+import { LogError } from '../helper/vscode-helper';
+import { join } from 'path';
 import { CosmosClient, Database, Container } from "@azure/cosmos";
-import { SubscriptionClient } from "@azure/arm-subscriptions";
+import { VSCodeAzureSubscriptionProvider } from "@microsoft/vscode-azext-azureauth";
 import { CosmosDBManagementClient } from "@azure/arm-cosmosdb";
 import { TokenCredential } from "@azure/identity";
 
-export class AzureResourceProvider implements vscode.TreeDataProvider<AzureResource> {
-  private _onDidChangeTreeData: vscode.EventEmitter<AzureResource | undefined> = new vscode.EventEmitter<AzureResource | undefined>();
-  readonly onDidChangeTreeData: vscode.Event<AzureResource | undefined> = this._onDidChangeTreeData.event;
+
+const NOSQL_KIND: string = "GlobalDocumentDB";
+const CREDENTIALS_NOT_FOUND: string = "Credentials not found";
+
+export class AzureResourceProvider implements TreeDataProvider<AzureResource> {
+  private _onDidChangeTreeData: EventEmitter<AzureResource | undefined> = new EventEmitter<AzureResource | undefined>();
+  readonly onDidChangeTreeData: Event<AzureResource | undefined> = this._onDidChangeTreeData.event;
 
   private _cosmosAccounts: Map<string, CosmosAccount[]> = new Map<string, CosmosAccount[]>();
   private _cosmosDatabases: Map<string, CosmosDatabase[]> = new Map<string, CosmosDatabase[]>();
   private _cosmosContainers: Map<string, CosmosContainer[]> = new Map<string, CosmosContainer[]>();
 
   constructor(
-    private credentials: TokenCredential | null = null
+    private _subscriptionProvider: VSCodeAzureSubscriptionProvider,
+    private _credentials: Map<string, TokenCredential> | null = null
   ) {}
 
+  public updateCredentials(
+    _credentials: Map<string, TokenCredential> | null): void 
+  { this._credentials = _credentials; }
 
-  public getRelatedCosmosAccounts(subscriptionId: string): CosmosAccount[] | undefined {
-    return this._cosmosAccounts.get(subscriptionId);
-  }
+  public getRelatedCosmosAccounts(
+    subscriptionId: string): CosmosAccount[] | undefined 
+  { return this._cosmosAccounts.get(subscriptionId); }
 
-  public getRelatedCosmosDatabases(accountId: string): CosmosDatabase[] | undefined {
-    return this._cosmosDatabases.get(accountId);
-  }
+  public getRelatedCosmosDatabases(
+    accountId: string): CosmosDatabase[] | undefined 
+  { return this._cosmosDatabases.get(accountId); }
 
-  public getRelatedCosmosContainers(databaseId: string): CosmosContainer[] | undefined {
-    return this._cosmosContainers.get(databaseId);
-  }
+  public getRelatedCosmosContainers(
+    databaseId: string): CosmosContainer[] | undefined 
+  { return this._cosmosContainers.get(databaseId); }
 
-  public updateCredentials(credentials: TokenCredential | null) {
-    this.credentials = credentials;
-  }
+  public refreshTree(): void 
+  { this._onDidChangeTreeData.fire(undefined); }
 
-  public refreshTree(): void {
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  public refresh(element: AzureResource): void {
-    if (element instanceof CosmosContainer) {
-      var container = element as CosmosContainer;
-      var database = this._cosmosDatabases.get(container.accountId)?.find(db => db.databaseId === container.databaseId);
-      if (database) {
-        this.refresh(database);
-      }
+  public refresh(
+    element: AzureResource): void 
+  {
+    if (!(element instanceof CosmosContainer)) {
+      this._onDidChangeTreeData.fire(element);
       return;
     }
-    this._onDidChangeTreeData.fire(element);
+
+    const container = element as CosmosContainer;
+    const database = this._cosmosDatabases
+      .get(container.accountId)
+      ?.find(db => db.databaseId === container.databaseId);
+    if (database) { this.refresh(database); }
   }
 
-  public getTreeItem(element: AzureResource): vscode.TreeItem {
-    return element;
-  }
+  public getTreeItem(
+    element: AzureResource): TreeItem 
+  { return element; }
 
-  public getChildren(element?: AzureResource): Thenable<AzureResource[]> {
-    if (this.credentials === null) {
-      vscode.window.showErrorMessage('Azure credentials not found. Please log in to Azure.');
-      return Promise.resolve([]);
-    }
+  public getChildren(
+    element?: AzureResource): Thenable<AzureResource[]> 
+  {
+    if (this._credentials === null) { return Promise.resolve([]); }
 
     if (element === undefined) {
       try {
         return this.getSubscriptions();
       } catch (error) {
-        this.logError(error);
+        LogError(error);
         return Promise.resolve([new InsufficientPermission()]);
       }
     }
     switch (element.constructor) {
       case Subscription:
-        var subscription = element as Subscription;
+        const subscription = element as Subscription;
         try {
           return this.getCosmosAccounts(subscription);
         } catch (error) {
-          this.logError(error);
+          LogError(error);
           return Promise.resolve([new InsufficientPermission()]);
         }
       case CosmosAccount:
-        var account = element as CosmosAccount;
+        const account = element as CosmosAccount;
         try {
           return this.getCosmosDatabases(account);
         } catch (error) {
-          this.logError(error);
+          LogError(error);
           return Promise.resolve([new InsufficientPermission()]);
         }
       case CosmosDatabase:
-        var database = element as CosmosDatabase;
+        const database = element as CosmosDatabase;
         try {
           return this.getCosmosContainers(database);
         }
         catch (error) {
-          this.logError(error);
+          LogError(error);
           return Promise.resolve([new InsufficientPermission()]);
         }
       case CosmosContainer:
@@ -101,113 +114,110 @@ export class AzureResourceProvider implements vscode.TreeDataProvider<AzureResou
     }
   }
 
-  private logError(error: any) {
-    if (error instanceof Error) {
-      vscode.window.showErrorMessage(error.message);
-    }
-    if (typeof error === 'string') {
-      vscode.window.showErrorMessage(error);
-    }
-    console.error(error);
-  }
+  private async getSubscriptions(): Promise<AzureResource[]> 
+  {
+    const _subscriptions = await this._subscriptionProvider.getSubscriptions();
+    if (_subscriptions.length === 0) { return [new NoResourceFound()]; }
 
-  private async getSubscriptions(): Promise<AzureResource[]> {
-    var subscriptionClient = new SubscriptionClient(this.credentials!);
-    var result = new Array<Subscription>();
-    for await (var item of subscriptionClient.subscriptions.list()) {
-      if (item.displayName && item.subscriptionId) {
-        var subscription = new Subscription(
-          item.displayName, 
-          vscode.TreeItemCollapsibleState.Collapsed, 
-          item.subscriptionId)
-        result.push(subscription);
+    let _result = new Array<Subscription>();
+    for (const _subscription of _subscriptions) {
+      if (_subscription.name && 
+        _subscription.subscriptionId) 
+      {
+        const subscription = new Subscription(
+          _subscription.name, 
+          TreeItemCollapsibleState.Collapsed, 
+          _subscription.subscriptionId)
+        _result.push(subscription);
       }
     }
-    if (result.length === 0) {
-      return [new NoResourceFound()];
-    }
-    return result;
+    return _result;
   }
 
   private async getCosmosAccounts(
-    subscription: Subscription): Promise<AzureResource[]> {
-    var cosmosClient = new CosmosDBManagementClient(this.credentials!, subscription.subscriptionId);
-    var result = new Array<CosmosAccount>();
-    for await (var item of cosmosClient.databaseAccounts.list()) {
-      if (item.name && item.id && item.documentEndpoint && item.kind === 'GlobalDocumentDB') {
-        var resourceGroup = item.id.split('/')[4];
-        var account = new CosmosAccount(
-          item.name, 
-          vscode.TreeItemCollapsibleState.Collapsed, 
-          item.name, 
-          resourceGroup, 
-          item.documentEndpoint, 
-          subscription.subscriptionId);
-        result.push(account);
+    _subscription: Subscription): Promise<AzureResource[]> 
+  {
+    const _credential = this._credentials?.get(_subscription.subscriptionId);
+    if (_credential === undefined) { throw Error(CREDENTIALS_NOT_FOUND); }
+    const _cosmosClient = new CosmosDBManagementClient(_credential, _subscription.subscriptionId);
+    let _result = new Array<CosmosAccount>();
+    for await (const _account of _cosmosClient.databaseAccounts.list()) {
+      if (_account.name && 
+        _account.id && 
+        _account.documentEndpoint && 
+        _account.kind === NOSQL_KIND) 
+      {
+        const _resourceGroup = _account.id.split('/')[4];
+        const account = new CosmosAccount(
+          _account.name, 
+          TreeItemCollapsibleState.Collapsed, 
+          _account.name, 
+          _resourceGroup, 
+          _account.documentEndpoint, 
+          _subscription.subscriptionId);
+        _result.push(account);
       }
     }
-    this._cosmosAccounts.set(subscription.subscriptionId, result);
-    if (result.length === 0) {
-      return [new NoResourceFound()];
-    }
-    return result;
+    this._cosmosAccounts.set(_subscription.subscriptionId, _result);
+    if (_result.length === 0) { return [new NoResourceFound()]; }
+    return _result;
   }
 
   private async getCosmosDatabases(
-    account: CosmosAccount): Promise<AzureResource[]> {
-    var cosmosManagementClient = new CosmosDBManagementClient(this.credentials!, account.subscriptionId);
-    var keys = await cosmosManagementClient.databaseAccounts.listKeys(account.resourceGroupId, account.accountId);
-    var cosmosClient = new CosmosClient({
-      endpoint: account.documentEndpoint,
-      key: keys.primaryMasterKey
+    _account: CosmosAccount): Promise<AzureResource[]> 
+  {
+    const _credential = this._credentials?.get(_account.subscriptionId);
+    if (_credential === undefined) { throw Error(CREDENTIALS_NOT_FOUND); }
+    const _cosmosManagementClient = new CosmosDBManagementClient(_credential, _account.subscriptionId);
+    const _keys = await _cosmosManagementClient.databaseAccounts.listKeys(_account.resourceGroupId, _account.accountId);
+    const _cosmosClient = new CosmosClient({
+      endpoint: _account.documentEndpoint,
+      key: _keys.primaryMasterKey
     });
 
-    const { resources: databases } = await cosmosClient.databases.readAll().fetchAll();
-    if (databases.length === 0) {
-      return [new NoResourceFound()];
-    }
-    var results = databases.map(db => {
+    const { resources: _databases } = await _cosmosClient.databases.readAll().fetchAll();
+    if (_databases.length === 0) { return [new NoResourceFound()]; }
+    const _results = _databases.map(_database => {
       var cosmosDatabase = new CosmosDatabase(
-        db.id, 
-        vscode.TreeItemCollapsibleState.Collapsed, 
-        db.id,
-        account.accountId,
-        account.subscriptionId,
-        cosmosClient.database(db.id));
+        _database.id, 
+        TreeItemCollapsibleState.Collapsed, 
+        _database.id,
+        _account.accountId,
+        _account.subscriptionId,
+        _cosmosClient.database(_database.id));
       return cosmosDatabase;
     });
-    this._cosmosDatabases.set(account.accountId, results);
-    return results;
+    this._cosmosDatabases.set(_account.accountId, _results);
+    return _results;
   }
 
   private async getCosmosContainers(
-    database: CosmosDatabase): Promise<AzureResource[]> {
-    const { resources: containers } = await database.database.containers.readAll().fetchAll();
-    var result = new Array<CosmosContainer>();
-    for await (var container of containers) {
-      var containerClient = database.database.container(container.id)
+    _database: CosmosDatabase): Promise<AzureResource[]> 
+  {
+    const { resources: _containers } = await _database.database.containers.readAll().fetchAll();
+    let _result = new Array<CosmosContainer>();
+    for await (const _container of _containers) {
+      var containerClient = _database.database.container(_container.id)
       var cosmosContainer = new CosmosContainer(
-        container.id, 
-        container.id, 
+        _container.id, 
+        _container.id, 
         await containerClient.items.readAll().fetchAll().then(items => items.resources.length === 0),
-        database.databaseId, 
-        database.accountId, 
-        database.subscriptionId,
+        _database.databaseId, 
+        _database.accountId, 
+        _database.subscriptionId,
         containerClient);
-      result.push(cosmosContainer);
+        _result.push(cosmosContainer);
     }
-    this._cosmosContainers.set(database.databaseId, result);
-    if (result.length === 0) {
-      return [new NoResourceFound()];
-    }
-    return result;
+    this._cosmosContainers.set(_database.databaseId, _result);
+    if (_result.length === 0) { return [new NoResourceFound()]; }
+    return _result;
   }
 }
 
-export class AzureResource extends vscode.TreeItem {
+export class AzureResource extends TreeItem {
   constructor(
     public readonly label: string,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState
+    public readonly collapsibleState: TreeItemCollapsibleState
   ) {
     super(label, collapsibleState);
   }
@@ -216,7 +226,7 @@ export class AzureResource extends vscode.TreeItem {
 export class Subscription extends AzureResource {
   constructor(
     public readonly label: string,
-    public collapsibleState: vscode.TreeItemCollapsibleState,
+    public collapsibleState: TreeItemCollapsibleState,
     public readonly subscriptionId: string
   ) {
     super(label, collapsibleState);
@@ -224,8 +234,8 @@ export class Subscription extends AzureResource {
   }
 
   iconPath = {
-    light: path.join(__filename, '..', 'resources', 'dark', 'subscription-icon.svg'),
-    dark: path.join(__filename, '..', 'resources', 'light', 'subscription-icon.svg')
+    light: join(__filename, '..', 'resources', 'dark', 'subscription-icon.svg'),
+    dark: join(__filename, '..', 'resources', 'light', 'subscription-icon.svg')
   };
   contextValue = 'subscription';
 }
@@ -233,7 +243,7 @@ export class Subscription extends AzureResource {
 export class CosmosAccount extends AzureResource {
   constructor(
     public readonly label: string,
-    public collapsibleState: vscode.TreeItemCollapsibleState,
+    public collapsibleState: TreeItemCollapsibleState,
     public readonly accountId: string,
     public readonly resourceGroupId: string,
     public readonly documentEndpoint: string,
@@ -242,8 +252,8 @@ export class CosmosAccount extends AzureResource {
     super(label, collapsibleState);
     this.tooltip = `Cosmos DB Account: ${this.label}`;
       this.iconPath = {
-        light: path.join(__filename, '..', 'resources', 'dark', 'cosmos-account-icon.svg'),
-        dark: path.join(__filename, '..', 'resources', 'light', 'cosmos-account-icon.svg')
+        light: join(__filename, '..', 'resources', 'dark', 'cosmos-account-icon.svg'),
+        dark: join(__filename, '..', 'resources', 'light', 'cosmos-account-icon.svg')
       };
       this.contextValue = 'cosmosAccount';
   }
@@ -252,7 +262,7 @@ export class CosmosAccount extends AzureResource {
 export class CosmosDatabase extends AzureResource {
   constructor(
     public readonly label: string,
-    public collapsibleState: vscode.TreeItemCollapsibleState,
+    public collapsibleState: TreeItemCollapsibleState,
     public readonly databaseId: string,
     public readonly accountId: string,
     public readonly subscriptionId: string,
@@ -263,8 +273,8 @@ export class CosmosDatabase extends AzureResource {
   }
 
   iconPath = {
-    light: path.join(__filename, '..', 'resources', 'dark', 'cosmos-database-icon.svg'),
-    dark: path.join(__filename, '..', 'resources', 'light', 'cosmos-database-icon.svg')
+    light: join(__filename, '..', 'resources', 'dark', 'cosmos-database-icon.svg'),
+    dark: join(__filename, '..', 'resources', 'light', 'cosmos-database-icon.svg')
   };
   contextValue = 'cosmosDatabase';
 }
@@ -278,7 +288,7 @@ export class CosmosContainer extends AzureResource {
     public readonly accountId: string,
     public readonly subscriptionId: string,
     public readonly container: Container,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None
+    public readonly collapsibleState: TreeItemCollapsibleState = TreeItemCollapsibleState.None
   ) {
     super(label, collapsibleState);
     this.tooltip = `Cosmos DB Container: ${this.label}`;
@@ -286,14 +296,14 @@ export class CosmosContainer extends AzureResource {
       this.tooltip += ' (Empty)';
       this.description = '(Empty)';
       this.iconPath = {
-        light: path.join(__filename, '..', 'resources', 'dark', 'cosmos-empty-container-icon.svg'),
-        dark: path.join(__filename, '..', 'resources', 'light', 'cosmos-empty-container-icon.svg')
+        light: join(__filename, '..', 'resources', 'dark', 'cosmos-empty-container-icon.svg'),
+        dark: join(__filename, '..', 'resources', 'light', 'cosmos-empty-container-icon.svg')
       };
       return;
     }
     this.iconPath = {
-      light: path.join(__filename, '..', 'resources', 'dark', 'cosmos-full-container-icon.svg'),
-      dark: path.join(__filename, '..', 'resources', 'light', 'cosmos-full-container-icon.svg')
+      light: join(__filename, '..', 'resources', 'dark', 'cosmos-full-container-icon.svg'),
+      dark: join(__filename, '..', 'resources', 'light', 'cosmos-full-container-icon.svg')
     };
     this.contextValue = 'cosmosContainer';
   }
@@ -301,20 +311,20 @@ export class CosmosContainer extends AzureResource {
 
 class NoResourceFound extends AzureResource {
   constructor() {
-    super('No resources found', vscode.TreeItemCollapsibleState.None);
+    super('No resources found', TreeItemCollapsibleState.None);
   }
   iconPath = {
-    light: path.join(__filename, '..', 'resources', 'dark', 'warning-icon.svg'),
-    dark: path.join(__filename, '..', 'resources', 'light', 'warning-icon.svg')
+    light: join(__filename, '..', 'resources', 'dark', 'warning-icon.svg'),
+    dark: join(__filename, '..', 'resources', 'light', 'warning-icon.svg')
   };
 }
 
 class InsufficientPermission extends AzureResource {
   constructor() {
-    super('Insufficient Permission', vscode.TreeItemCollapsibleState.None);
+    super('Insufficient Permission', TreeItemCollapsibleState.None);
   }
   iconPath = {
-    light: path.join(__filename, '..', 'resources', 'dark', 'warning-icon.svg'),
-    dark: path.join(__filename, '..', 'resources', 'light', 'warning-icon.svg')
+    light: join(__filename, '..', 'resources', 'dark', 'warning-icon.svg'),
+    dark: join(__filename, '..', 'resources', 'light', 'warning-icon.svg')
   };
 }

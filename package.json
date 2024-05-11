@@ -16,7 +16,7 @@
     "clear",
     "container"
   ],
-  "publisher": "Tjark Prokoph",
+  "publisher": "tjarkprokoph",
   "repository": {
     "type": "git",
     "url": "https://github.com/tjarkpr/cosmosnosql-clear-container-extension.git"

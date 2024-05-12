@@ -1,6 +1,6 @@
-# **ALPHA-Version**: CosmosNoSQL (Global DocumentDb) Clear Container Extension
-CosmosNoSQL CCE provides a simple, user-friendly way to clear all documents from CosmosNoSQL (Global DocumentDb) containers.
+# CosmosNoSQL (Global DocumentDb) Clear Container Extension
+[![Version](https://vsmarketplacebadges.dev/version/tjarkprokoph.cosmosnosql-clear-container-extension.svg)](https://marketplace.visualstudio.com/items?itemName=tjarkprokoph.cosmosnosql-clear-container-extension)
+[![GitHub](https://flat.badgen.net/github/release/tjarkpr/cosmosnosql-clear-container-extension)](https://github.com/tjarkpr/cosmosnosql-clear-container-extension/releases)
+[![The MIT License](https://flat.badgen.net/badge/license/MIT/orange)](http://opensource.org/licenses/MIT)
 
-> **Disclaimer:** This VSCode Extension should only be a quality of life improvement. It is not recommended for management use.
-
-Since the extension is not yet listed at the marketplace, you can install it via the [GitHub Releases](https://github.com/tjarkpr/cosmosnosql-clear-container-extension/releases). Just download the latest `.vsix` file and install the extension locally.
+CosmosNoSQL CCE provides a simple, user-friendly way to clear all documents from CosmosNoSQL (Global DocumentDb) containers. Unlock the full potential of your data ecosystem and revolutionize your development workflow today!

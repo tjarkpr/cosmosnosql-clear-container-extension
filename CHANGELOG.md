@@ -15,3 +15,7 @@ All notable changes to the "cosmosnosql-clear-container-extension" extension wil
 
 - Changed to new authentication provider
 - Fixed bugs
+
+## [1.0.0](https://github.com/tjarkpr/cosmosnosql-clear-container-extension/releases)
+
+- Fixed icons and documentation

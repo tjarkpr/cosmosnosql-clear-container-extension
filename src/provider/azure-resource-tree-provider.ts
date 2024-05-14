@@ -1,5 +1,4 @@
 import { 
-  window,
   TreeDataProvider,
   TreeItemCollapsibleState,
   EventEmitter,

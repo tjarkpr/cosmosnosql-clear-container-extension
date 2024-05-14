@@ -48,8 +48,16 @@
         "command": "cosmosnosql-clear-container-extension.logoutFromAzure",
         "title": "Logout from Azure",
         "icon": {
-          "light": "resources/dark/azure-icon.svg",
-          "dark": "resources/light/azure-icon.svg"
+          "light": "resources/dark/logout-icon.svg",
+          "dark": "resources/light/logout-icon.svg"
+        }
+      },
+      {
+        "command": "cosmosnosql-clear-container-extension.changeTenant",
+        "title": "Change tenant",
+        "icon": {
+          "light": "resources/dark/tenant-icon.svg",
+          "dark": "resources/light/tenant-icon.svg"
         }
       },
       {
@@ -74,17 +82,22 @@
         {
           "command": "cosmosnosql-clear-container-extension.logoutFromAzure",
           "when": "view == azure-resource-tree-view && cosmosnosql-clear-container-extension.isLoggedIntoAzure === true",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "cosmosnosql-clear-container-extension.changeTenant",
+          "when": "view == azure-resource-tree-view && cosmosnosql-clear-container-extension.isLoggedIntoAzure === true",
+          "group": "navigation@2"
         },
         {
           "command": "cosmosnosql-clear-container-extension.reload",
           "when": "view == azure-resource-tree-view && cosmosnosql-clear-container-extension.isLoggedIntoAzure === true",
-          "group": "navigation"
+          "group": "navigation@3"
         },
         {
           "command": "cosmosnosql-clear-container-extension.clearContainer",
           "when": "view == azure-resource-tree-view && cosmosnosql-clear-container-extension.isLoggedIntoAzure === true",
-          "group": "navigation"
+          "group": "navigation@4"
         }
       ]
     },
@@ -115,7 +128,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "npm run prebuild && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node && npm run unix-copy",
+    "esbuild-base": "npm run prebuild && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node && npm run copy",
     "prebuild": "rimraf dist",
     "unix-copy": "rsync -a resources dist",
     "copy": "xcopy /I /E resources dist\\resources",

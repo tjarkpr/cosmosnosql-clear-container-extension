@@ -19,3 +19,7 @@ All notable changes to the "cosmosnosql-clear-container-extension" extension wil
 ## [1.0.0](https://github.com/tjarkpr/cosmosnosql-clear-container-extension/releases)
 
 - Fixed icons and documentation
+
+## [1.0.1](https://github.com/tjarkpr/cosmosnosql-clear-container-extension/releases)
+
+- Fixed different tenant handling

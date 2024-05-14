@@ -2,7 +2,7 @@
   "name": "cosmosnosql-clear-container-extension",
   "displayName": "CosmosNoSQL Clear Container Extension",
   "description": "A simple, user-friendly way to clear all documents from CosmosNoSQL containers.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "vscode": "^1.89.0"
   },
@@ -128,7 +128,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "npm run prebuild && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node && npm run copy",
+    "esbuild-base": "npm run prebuild && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node && npm run unix-copy",
     "prebuild": "rimraf dist",
     "unix-copy": "rsync -a resources dist",
     "copy": "xcopy /I /E resources dist\\resources",
